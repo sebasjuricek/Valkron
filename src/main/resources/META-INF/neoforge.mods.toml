@@ -1,0 +1,23 @@
+modLoader = "javafml"
+loaderVersion = "[4,)"
+license = "All Rights Reserved"
+
+[[mods]]
+modId = "valkron"
+version = "1.0.0"
+displayName = "Valkron"
+description = "Five original sci-fi weapons and five matching ammunition types."
+
+[[dependencies.valkron]]
+modId = "neoforge"
+type = "required"
+versionRange = "[21.1.267,21.2)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.valkron]]
+modId = "minecraft"
+type = "required"
+versionRange = "[1.21.1,1.21.2)"
+ordering = "NONE"
+side = "BOTH"

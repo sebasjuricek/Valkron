@@ -1,0 +1,98 @@
+{
+  "dry": {
+    "subtitle": "subtitles.valkron.dry",
+    "sounds": [
+      "valkron:dry"
+    ]
+  },
+  "pulse_rifle.fire": {
+    "subtitle": "subtitles.valkron.pulse_rifle.fire",
+    "sounds": [
+      "valkron:pulse_rifle/fire"
+    ]
+  },
+  "pulse_rifle.reload": {
+    "subtitle": "subtitles.valkron.pulse_rifle.reload",
+    "sounds": [
+      "valkron:pulse_rifle/reload"
+    ]
+  },
+  "pulse_rifle.impact": {
+    "subtitle": "subtitles.valkron.pulse_rifle.impact",
+    "sounds": [
+      "valkron:pulse_rifle/impact"
+    ]
+  },
+  "plasma_cannon.fire": {
+    "subtitle": "subtitles.valkron.plasma_cannon.fire",
+    "sounds": [
+      "valkron:plasma_cannon/fire"
+    ]
+  },
+  "plasma_cannon.reload": {
+    "subtitle": "subtitles.valkron.plasma_cannon.reload",
+    "sounds": [
+      "valkron:plasma_cannon/reload"
+    ]
+  },
+  "plasma_cannon.impact": {
+    "subtitle": "subtitles.valkron.plasma_cannon.impact",
+    "sounds": [
+      "valkron:plasma_cannon/impact"
+    ]
+  },
+  "railgun.fire": {
+    "subtitle": "subtitles.valkron.railgun.fire",
+    "sounds": [
+      "valkron:railgun/fire"
+    ]
+  },
+  "railgun.reload": {
+    "subtitle": "subtitles.valkron.railgun.reload",
+    "sounds": [
+      "valkron:railgun/reload"
+    ]
+  },
+  "railgun.impact": {
+    "subtitle": "subtitles.valkron.railgun.impact",
+    "sounds": [
+      "valkron:railgun/impact"
+    ]
+  },
+  "laser_carbine.fire": {
+    "subtitle": "subtitles.valkron.laser_carbine.fire",
+    "sounds": [
+      "valkron:laser_carbine/fire"
+    ]
+  },
+  "laser_carbine.reload": {
+    "subtitle": "subtitles.valkron.laser_carbine.reload",
+    "sounds": [
+      "valkron:laser_carbine/reload"
+    ]
+  },
+  "laser_carbine.impact": {
+    "subtitle": "subtitles.valkron.laser_carbine.impact",
+    "sounds": [
+      "valkron:laser_carbine/impact"
+    ]
+  },
+  "ion_blaster.fire": {
+    "subtitle": "subtitles.valkron.ion_blaster.fire",
+    "sounds": [
+      "valkron:ion_blaster/fire"
+    ]
+  },
+  "ion_blaster.reload": {
+    "subtitle": "subtitles.valkron.ion_blaster.reload",
+    "sounds": [
+      "valkron:ion_blaster/reload"
+    ]
+  },
+  "ion_blaster.impact": {
+    "subtitle": "subtitles.valkron.ion_blaster.impact",
+    "sounds": [
+      "valkron:ion_blaster/impact"
+    ]
+  }
+}
