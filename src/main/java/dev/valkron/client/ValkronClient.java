@@ -3,6 +3,7 @@ package dev.valkron.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import dev.valkron.GeoGunItem;
 import dev.valkron.GunItem;
 import dev.valkron.GunNetwork;
 import dev.valkron.Valkron;
@@ -19,9 +20,12 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
@@ -31,6 +35,7 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
+import net.neoforged.neoforge.client.event.RenderPlayerEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -48,7 +53,10 @@ public final class ValkronClient {
 
     private record ObservedAction(Weapon weapon, GunNetwork.Phase phase, int startTick, int endTick) {}
 
+    public record GunAnimationCue(GunNetwork.Phase phase, int startTick) {}
+
     private static final Map<Integer, ObservedAction> OBSERVED_ACTIONS = new HashMap<>();
+    private static Player renderedPlayer;
     private static int clock;
     private static int nextTrigger;
     private static boolean triggerHeld;
@@ -76,10 +84,47 @@ public final class ValkronClient {
     public static void setup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
             for (Weapon weapon : Weapon.values()) {
-                ItemProperties.register(Valkron.kit(weapon).gun().get(), Valkron.id("action"),
+                GunItem gun = Valkron.kit(weapon).gun().get();
+                if (gun instanceof GeoGunItem) continue;
+                ItemProperties.register(gun, Valkron.id("action"),
                         (stack, level, entity, seed) -> modelAction(entity, weapon));
             }
         });
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void beginPlayerRender(RenderPlayerEvent.Pre event) {
+        renderedPlayer = event.getEntity();
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void endPlayerRender(RenderPlayerEvent.Post event) {
+        renderedPlayer = null;
+    }
+
+    public static Player renderedGunHolder(ItemStack stack, ItemDisplayContext perspective) {
+        if (stack == null || perspective == null) return null;
+        Player holder = switch (perspective) {
+            case FIRST_PERSON_LEFT_HAND, FIRST_PERSON_RIGHT_HAND -> Minecraft.getInstance().player;
+            case THIRD_PERSON_LEFT_HAND, THIRD_PERSON_RIGHT_HAND -> renderedPlayer;
+            default -> null;
+        };
+        if (holder == null || !holder.getMainHandItem().is(stack.getItem())) return null;
+        boolean leftHand = perspective == ItemDisplayContext.FIRST_PERSON_LEFT_HAND
+                || perspective == ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
+        return (holder.getMainArm() == HumanoidArm.LEFT) == leftHand ? holder : null;
+    }
+
+    public static GunAnimationCue gunAnimationCue(Player holder, Weapon weapon) {
+        if (holder == null) return null;
+        if (holder == Minecraft.getInstance().player) {
+            if (weapon != effectWeapon) return null;
+            if (isReloading(weapon)) return new GunAnimationCue(GunNetwork.Phase.RELOAD, reloadAt);
+            return clock - firedAt < weapon.cooldown ? new GunAnimationCue(GunNetwork.Phase.FIRE, firedAt) : null;
+        }
+        ObservedAction action = OBSERVED_ACTIONS.get(holder.getId());
+        return action != null && action.weapon() == weapon && clock < action.endTick()
+                ? new GunAnimationCue(action.phase(), action.startTick()) : null;
     }
 
     @SubscribeEvent
@@ -181,6 +226,7 @@ public final class ValkronClient {
         triggerHeld = false;
         triggerPressed = false;
         OBSERVED_ACTIONS.clear();
+        renderedPlayer = null;
     }
 
     public static void accept(GunNetwork.State state) {
@@ -188,8 +234,12 @@ public final class ValkronClient {
         if (client.player == null) return;
         if (state.actorId() != client.player.getId()) {
             switch (state.phase()) {
-                case FIRE -> OBSERVED_ACTIONS.put(state.actorId(),
-                        new ObservedAction(state.weapon(), state.phase(), clock, clock + 2));
+                case FIRE -> {
+                    int duration = Valkron.kit(state.weapon()).gun().get() instanceof GeoGunItem
+                            ? state.weapon().cooldown : 2;
+                    OBSERVED_ACTIONS.put(state.actorId(),
+                            new ObservedAction(state.weapon(), state.phase(), clock, clock + duration));
+                }
                 case RELOAD -> OBSERVED_ACTIONS.put(state.actorId(),
                         new ObservedAction(state.weapon(), state.phase(), clock, clock + state.weapon().reloadTicks));
                 case READY -> OBSERVED_ACTIONS.remove(state.actorId());

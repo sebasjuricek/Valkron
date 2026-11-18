@@ -54,3 +54,9 @@ Ammo recipes are shapeless. Place one of each listed ingredient anywhere in the 
 Install the same Valkron and GeckoLib JARs in the server's and every joining client's `mods` folders. The server validates firing, reloads, ammunition, and damage. Valkron respects the server's PvP setting and team friendly-fire settings.
 
 With a Java 21 JDK selected in `JAVA_HOME`, run `.\gradlew.bat build` from this folder. The compiled mod is written to `build/libs/valkron-1.0.0.jar`. The 3D models, textures, and audio ship inside the JAR. To regenerate those resources, run `python tools/generate_assets.py` with Pillow, NumPy, and soundfile installed.
+
+### Pulse Rifle art
+
+The Pulse Rifle uses a GeckoLib rig with idle, fire, and reload clips. The asset generator skips its item display model and legacy gun textures and models. The original baked model is preserved as `pulse_rifle_legacy.json` alongside the legacy open and flash variants.
+
+The rig was converted from the existing cuboids and atlas. To refine UVs, tune pivots, or choreograph the magazine and muzzle keyframes visually, import the geometry, animation, and texture into Blockbench with the GeckoLib plugin, then save an editable project. Valkron ships the runtime exports. The item rig animates the rifle and its parts, while the player still uses the existing two-handed pose and first-person motion.

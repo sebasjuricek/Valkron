@@ -9,7 +9,7 @@ import net.minecraft.world.item.TooltipFlag;
 
 import java.util.List;
 
-public final class GunItem extends Item {
+public class GunItem extends Item {
     private final Weapon weapon;
 
     public GunItem(Weapon weapon) {
