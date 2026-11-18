@@ -6,6 +6,20 @@ plugins {
 group = 'dev.valkron'
 version = '1.0.0'
 
+repositories {
+    maven {
+        name = 'GeckoLib'
+        url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+        content {
+            includeGroup 'software.bernie.geckolib'
+        }
+    }
+}
+
+dependencies {
+    implementation 'software.bernie.geckolib:geckolib-neoforge-1.21.1:4.9.3'
+}
+
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'

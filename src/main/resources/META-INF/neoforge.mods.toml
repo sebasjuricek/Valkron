@@ -21,3 +21,10 @@ type = "required"
 versionRange = "[1.21.1,1.21.2)"
 ordering = "NONE"
 side = "BOTH"
+
+[[dependencies.valkron]]
+modId = "geckolib"
+type = "required"
+versionRange = "[4.9.3,5)"
+ordering = "AFTER"
+side = "BOTH"
