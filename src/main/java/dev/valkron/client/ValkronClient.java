@@ -49,13 +49,15 @@ import java.util.Map;
 public final class ValkronClient {
     private static final KeyMapping RELOAD = new KeyMapping(
             "key.valkron.reload", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, "key.categories.valkron");
+    private static final KeyMapping INSPECT = new KeyMapping(
+            "key.valkron.inspect", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_H, "key.categories.valkron");
     private static final DustParticleOptions BEAM_CORE = new DustParticleOptions(new Vector3f(1, 0.86f, 0.89f), 0.43f);
 
     private record ObservedAction(Weapon weapon, GunNetwork.Phase phase, int startTick, int endTick) {}
 
-    public record GunAnimationCue(GunNetwork.Phase phase, int startTick) {}
-
     private static final Map<Integer, ObservedAction> OBSERVED_ACTIONS = new HashMap<>();
+    private static final GunAnimationState PULSE_ANIMATION = new GunAnimationState();
+    private static ItemStack inspectedStack = ItemStack.EMPTY;
     private static Player renderedPlayer;
     private static int clock;
     private static int nextTrigger;
@@ -73,6 +75,7 @@ public final class ValkronClient {
     @SubscribeEvent
     public static void keys(RegisterKeyMappingsEvent event) {
         event.register(RELOAD);
+        event.register(INSPECT);
     }
 
     @SubscribeEvent
@@ -115,16 +118,20 @@ public final class ValkronClient {
         return (holder.getMainArm() == HumanoidArm.LEFT) == leftHand ? holder : null;
     }
 
-    public static GunAnimationCue gunAnimationCue(Player holder, Weapon weapon) {
-        if (holder == null) return null;
+    static GunAnimationState.Cue gunAnimationCue(Player holder, Weapon weapon) {
+        if (holder == null) return GunAnimationState.Cue.IDLE;
         if (holder == Minecraft.getInstance().player) {
-            if (weapon != effectWeapon) return null;
-            if (isReloading(weapon)) return new GunAnimationCue(GunNetwork.Phase.RELOAD, reloadAt);
-            return clock - firedAt < weapon.cooldown ? new GunAnimationCue(GunNetwork.Phase.FIRE, firedAt) : null;
+            return weapon == Weapon.PULSE_RIFLE && heldWeapon == weapon
+                    && holder.getInventory().selected == heldSlot ? PULSE_ANIMATION.at(clock) : GunAnimationState.Cue.IDLE;
         }
         ObservedAction action = OBSERVED_ACTIONS.get(holder.getId());
         return action != null && action.weapon() == weapon && clock < action.endTick()
-                ? new GunAnimationCue(action.phase(), action.startTick()) : null;
+                ? GunAnimationState.Cue.confirmed(action.phase(), weapon, action.startTick())
+                : GunAnimationState.Cue.IDLE;
+    }
+
+    static float gunAnimationAge(GunAnimationState.Cue cue, float partialTick) {
+        return Mth.clamp(clock - cue.startTick() + partialTick, 0, cue.endTick() - cue.startTick());
     }
 
     @SubscribeEvent
@@ -167,27 +174,45 @@ public final class ValkronClient {
     @SubscribeEvent
     public static void tick(ClientTickEvent.Post event) {
         Minecraft client = Minecraft.getInstance();
-        if (client.isPaused()) return;
+        if (client.isPaused()) {
+            interruptInspect();
+            while (INSPECT.consumeClick()) {}
+            return;
+        }
         clock++;
         if (clock % 40 == 0) OBSERVED_ACTIONS.values().removeIf(action -> clock >= action.endTick());
 
         var player = client.player;
+        ItemStack held = player == null ? ItemStack.EMPTY : player.getMainHandItem();
+        GunItem gun = held.getItem() instanceof GunItem item ? item : null;
+        synchronizeHeld(client, gun == null ? null : gun.weapon());
+        boolean inspectRequested = INSPECT.consumeClick();
+        while (INSPECT.consumeClick()) {}
         if (player == null || client.screen != null || !player.isAlive() || player.isSpectator()
-                || !(player.getMainHandItem().getItem() instanceof GunItem gun)) {
+                || gun == null) {
+            interruptInspect();
+            if (player == null || !player.isAlive() || player.isSpectator()) PULSE_ANIMATION.reset();
             triggerHeld = false;
             triggerPressed = false;
             while (RELOAD.consumeClick()) {}
             return;
         }
-        synchronizeHeld(client, gun.weapon());
+        if (held != inspectedStack || PULSE_ANIMATION.at(clock).phase() != GunAnimationState.Phase.INSPECT) {
+            interruptInspect();
+        }
         if (RELOAD.consumeClick()) {
+            interruptInspect();
             PacketDistributor.sendToServer(new GunNetwork.Trigger(true));
             triggerPressed = false;
             while (RELOAD.consumeClick()) {}
             return;
         }
         if (triggerPressed || (triggerHeld && client.options.keyUse.isDown() && gun.weapon().automatic)) {
+            interruptInspect();
             requestShot(client, gun);
+        } else if (inspectRequested && gun.weapon() == Weapon.PULSE_RIFLE && !client.options.keyUse.isDown()
+                && PULSE_ANIMATION.inspect(clock)) {
+            inspectedStack = held;
         }
         triggerPressed = false;
         if (!client.options.keyUse.isDown()) {
@@ -196,7 +221,7 @@ public final class ValkronClient {
     }
 
     private static void synchronizeHeld(Minecraft client, Weapon weapon) {
-        int slot = client.player.getInventory().selected;
+        int slot = client.player == null ? -1 : client.player.getInventory().selected;
         if (heldSlot != slot || heldWeapon != weapon) {
             heldSlot = slot;
             heldWeapon = weapon;
@@ -205,7 +230,14 @@ public final class ValkronClient {
             effectWeapon = null;
             firedAt = -100;
             reloadEnds = -100;
+            PULSE_ANIMATION.reset();
+            inspectedStack = ItemStack.EMPTY;
         }
+    }
+
+    private static void interruptInspect() {
+        PULSE_ANIMATION.interruptInspect();
+        inspectedStack = ItemStack.EMPTY;
     }
 
     private static void requestShot(Minecraft client, GunItem gun) {
@@ -227,6 +259,8 @@ public final class ValkronClient {
         triggerPressed = false;
         OBSERVED_ACTIONS.clear();
         renderedPlayer = null;
+        PULSE_ANIMATION.reset();
+        inspectedStack = ItemStack.EMPTY;
     }
 
     public static void accept(GunNetwork.State state) {
@@ -248,6 +282,9 @@ public final class ValkronClient {
         }
         if (!(client.player.getMainHandItem().getItem() instanceof GunItem gun) || gun.weapon() != state.weapon()) return;
         synchronizeHeld(client, state.weapon());
+        if (state.weapon() == Weapon.PULSE_RIFLE) {
+            PULSE_ANIMATION.confirm(state.phase(), state.weapon(), clock);
+        }
         effectWeapon = state.weapon();
         switch (state.phase()) {
             case FIRE -> {
@@ -293,6 +330,7 @@ public final class ValkronClient {
     private static void animate(PoseStack pose, Weapon weapon, float side, float partialTick) {
         if (effectWeapon != weapon) return;
         if (isReloading(weapon)) {
+            if (weapon == Weapon.PULSE_RIFLE) return; // The Pulse Rifle reload already moves its GeckoLib body.
             float progress = reloadProgress(partialTick);
             float tilt = Mth.sin(progress * Mth.PI);
             float seating = Mth.sin(Mth.clamp((progress - 0.62f) / 0.28f, 0, 1) * Mth.PI);
