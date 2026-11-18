@@ -502,6 +502,7 @@ def main():
         "itemGroup.valkron.equipment": "Valkron",
         "key.categories.valkron": "Valkron",
         "key.valkron.reload": "Reload weapon",
+        "key.valkron.inspect": "Inspect Pulse Rifle",
         "tooltip.valkron.magazine": "Magazine %s/%s · %s",
         "tooltip.valkron.controls": "Use to fire · Reload in Controls",
         "hud.valkron.reloading": "Reloading",
