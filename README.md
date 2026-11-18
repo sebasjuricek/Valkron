@@ -1,6 +1,6 @@
 # Valkron
 
-Valkron adds five original sci-fi weapons and five ammunition types to Minecraft 1.21.1. The installed build targets NeoForge 21.1.267 and Java 21. It has no additional mod dependencies.
+Valkron adds five original sci-fi weapons and five ammunition types to Minecraft 1.21.1. It targets NeoForge 21.1.267 and Java 21 and requires GeckoLib 4.9.3 or a later compatible GeckoLib 4 build.
 
 ## Controls
 
@@ -51,6 +51,6 @@ Ammo recipes are shapeless. Place one of each listed ingredient anywhere in the 
 
 ## Multiplayer and building
 
-Install the same Valkron JAR in the server's and every joining client's `mods` folders. The server validates firing, reloads, ammunition, and damage. Valkron respects the server's PvP setting and team friendly-fire settings.
+Install the same Valkron and GeckoLib JARs in the server's and every joining client's `mods` folders. The server validates firing, reloads, ammunition, and damage. Valkron respects the server's PvP setting and team friendly-fire settings.
 
 With a Java 21 JDK selected in `JAVA_HOME`, run `.\gradlew.bat build` from this folder. The compiled mod is written to `build/libs/valkron-1.0.0.jar`. The 3D models, textures, and audio ship inside the JAR. To regenerate those resources, run `python tools/generate_assets.py` with Pillow, NumPy, and soundfile installed.
