@@ -519,8 +519,10 @@ def main():
         name, ammo_name, glow_hex, ceramic_hex, shape, ingredients, amount = kit
         ammo = AMMO[index]
         glow = rgb(glow_hex)
-        model(weapon, (pulse, plasma, rail, laser, ion)[index], index)
-        save_image(ASSETS / "textures/item" / (weapon + ".png"), atlas(index, glow, rgb(ceramic_hex)))
+        # The Pulse Rifle's item model, legacy snapshots, and GeckoLib art are maintained separately.
+        if weapon != "pulse_rifle":
+            model(weapon, (pulse, plasma, rail, laser, ion)[index], index)
+            save_image(ASSETS / "textures/item" / (weapon + ".png"), atlas(index, glow, rgb(ceramic_hex)))
         save_image(ASSETS / "textures/item" / (ammo + ".png"), ammo_icon(index, glow))
         json_file(ASSETS / "models/item" / (ammo + ".json"), {
             "parent": "minecraft:item/generated", "textures": {"layer0": "valkron:item/" + ammo},
