@@ -31,7 +31,7 @@ public final class GunAnimationController extends AnimationController<GeoGunItem
                 state.getData(DataTickets.ITEM_RENDER_PERSPECTIVE));
         var next = ValkronClient.gunAnimationCue(holder, state.getAnimatable().weapon());
         partialTick = state.getPartialTick();
-        if (!cue.equals(next)) {
+        if (cue != next) {
             // Automatic fire can issue another confirmed shot without an intervening idle tick.
             forceAnimationReset();
             cue = next;

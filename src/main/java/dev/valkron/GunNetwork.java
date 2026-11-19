@@ -7,9 +7,11 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import software.bernie.geckolib.animatable.GeoItem;
 
 public final class GunNetwork {
     public enum Phase { FIRE, RELOAD, READY }
@@ -17,7 +19,7 @@ public final class GunNetwork {
     private GunNetwork() {}
 
     static void register(RegisterPayloadHandlersEvent event) {
-        var registrar = event.registrar("1");
+        var registrar = event.registrar("2");
         registrar.playToServer(Trigger.TYPE, Trigger.CODEC, (payload, context) -> {
             if (context.player() instanceof ServerPlayer player) GunActions.trigger(player, payload.reload());
         });
@@ -25,8 +27,9 @@ public final class GunNetwork {
         registrar.playToClient(Beam.TYPE, Beam.CODEC, (payload, context) -> ValkronClient.drawBeam(payload));
     }
 
-    static void sendState(ServerPlayer player, Phase phase, Weapon weapon) {
-        PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new State(player.getId(), phase, weapon));
+    static void sendState(ServerPlayer player, Phase phase, Weapon weapon, ItemStack stack, int slot) {
+        long stackId = GeoItem.getOrAssignId(stack, player.serverLevel());
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new State(player.getId(), phase, weapon, slot, stackId));
     }
 
     static void sendBeam(ServerLevel level, Vec3 start, Vec3 end) {
@@ -46,15 +49,18 @@ public final class GunNetwork {
         }
     }
 
-    public record State(int actorId, Phase phase, Weapon weapon) implements CustomPacketPayload {
+    public record State(int actorId, Phase phase, Weapon weapon, int slot, long stackId) implements CustomPacketPayload {
         static final Type<State> TYPE = new Type<>(Valkron.id("gun_state"));
         static final StreamCodec<FriendlyByteBuf, State> CODEC = StreamCodec.of(
                 (buffer, payload) -> {
                     buffer.writeVarInt(payload.actorId);
                     buffer.writeEnum(payload.phase);
                     buffer.writeEnum(payload.weapon);
+                    buffer.writeVarInt(payload.slot);
+                    buffer.writeVarLong(payload.stackId);
                 },
-                buffer -> new State(buffer.readVarInt(), buffer.readEnum(Phase.class), buffer.readEnum(Weapon.class)));
+                buffer -> new State(buffer.readVarInt(), buffer.readEnum(Phase.class), buffer.readEnum(Weapon.class),
+                        buffer.readVarInt(), buffer.readVarLong()));
 
         @Override
         public Type<State> type() {

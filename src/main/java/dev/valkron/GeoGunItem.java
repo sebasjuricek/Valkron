@@ -3,6 +3,11 @@ package dev.valkron;
 import dev.valkron.client.GeoGunRenderer;
 import dev.valkron.client.GunAnimationController;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.client.GeoRenderProvider;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -16,6 +21,14 @@ public final class GeoGunItem extends GunItem implements GeoItem {
 
     public GeoGunItem(Weapon weapon) {
         super(weapon);
+    }
+
+    @Override
+    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slot, boolean selected) {
+        if (selected && level instanceof ServerLevel server && entity instanceof ServerPlayer
+                && GeoItem.getId(stack) == Long.MAX_VALUE) {
+            GeoItem.getOrAssignId(stack, server);
+        }
     }
 
     @Override

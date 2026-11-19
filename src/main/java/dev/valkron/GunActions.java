@@ -57,7 +57,7 @@ final class GunActions {
         }
         Ballistics.fire(player, weapon);
         player.swing(InteractionHand.MAIN_HAND, true);
-        GunNetwork.sendState(player, GunNetwork.Phase.FIRE, weapon);
+        GunNetwork.sendState(player, GunNetwork.Phase.FIRE, weapon, stack, player.getInventory().selected);
     }
 
     private static void beginReload(ServerPlayer player, ItemStack stack, GunItem gun,
@@ -79,7 +79,7 @@ final class GunActions {
         state.reload = new Reload(stack, player.getInventory().selected, now + weapon.reloadTicks);
         player.serverLevel().playSound(null, player, Valkron.kit(weapon).reload().get(),
                 SoundSource.PLAYERS, 0.68f, 1.0f);
-        GunNetwork.sendState(player, GunNetwork.Phase.RELOAD, weapon);
+        GunNetwork.sendState(player, GunNetwork.Phase.RELOAD, weapon, stack, state.reload.slot());
     }
 
     static void tickPlayer(PlayerTickEvent.Post event) {
@@ -97,7 +97,7 @@ final class GunActions {
         if (!player.isAlive() || player.isSpectator() || player.getInventory().selected != reload.slot()
                 || player.getMainHandItem() != reload.stack() || player.containerMenu != player.inventoryMenu) {
             state.reload = null;
-            GunNetwork.sendState(player, GunNetwork.Phase.READY, weapon);
+            GunNetwork.sendState(player, GunNetwork.Phase.READY, weapon, reload.stack(), reload.slot());
             return;
         }
         if (now < reload.endsAt()) return;
@@ -117,7 +117,7 @@ final class GunActions {
             return;
         }
         state.reload = null;
-        GunNetwork.sendState(player, GunNetwork.Phase.READY, weapon);
+        GunNetwork.sendState(player, GunNetwork.Phase.READY, weapon, reload.stack(), reload.slot());
     }
 
     private static int reserve(Inventory inventory, Weapon weapon) {

@@ -7,7 +7,7 @@ Valkron adds five original sci-fi weapons and five ammunition types to Minecraft
 - Hold a weapon in your main hand. Right-click to fire, or use your configured **Use Item/Place Block** input.
 - Hold fire for the Pulse Rifle and Laser Carbine. The other three weapons fire once per press.
 - Press **R** to reload. Change this binding under **Options → Controls → Key Binds → Valkron**.
-- With the Pulse Rifle equipped, press **H** to inspect its energy core. Rebind it in the same menu. Firing, reloading, opening a screen, or switching slots interrupts inspection. The inspect animation plays only on your client.
+- With a Valkron gun equipped, press **H** to inspect its mechanism. Rebind it in the same menu. Firing, reloading, opening a screen, or switching slots interrupts inspection. Inspection plays only on your client.
 - Pulling the trigger on an empty magazine starts a reload if you have matching ammo. Switching away cancels a reload. Loading draws only the rounds needed to fill the magazine and can use a partial stack.
 - Crouch to tighten your spread. The bottom-right display shows magazine capacity, reserve ammunition, and reload progress.
 - Creative Mode fires with unlimited ammunition. All ten items are in the **Valkron** creative tab.
@@ -54,10 +54,8 @@ Ammo recipes are shapeless. Place one of each listed ingredient anywhere in the 
 
 Install the same Valkron and GeckoLib JARs in the server's and every joining client's `mods` folders. The server validates firing, reloads, ammunition, and damage. Valkron respects the server's PvP setting and team friendly-fire settings.
 
-With a Java 21 JDK selected in `JAVA_HOME`, run `.\gradlew.bat build` from this folder. The compiled mod is written to `build/libs/valkron-1.0.0.jar`. The 3D models, textures, and audio ship inside the JAR. To regenerate those resources, run `python tools/generate_assets.py` with Pillow, NumPy, and soundfile installed.
+With a Java 21 JDK selected in `JAVA_HOME`, run `.\gradlew.bat build` from this folder. The compiled mod is written to `build/libs/valkron-1.0.0.jar`. For multiplayer, update both the server and clients together because the action packet now identifies the held stack and slot.
 
-### Pulse Rifle art
+### Weapon art
 
-The Pulse Rifle uses a GeckoLib rig with idle, fire, reload, and inspect clips. Its reload clip follows the server-confirmed 29-tick reload. The asset generator skips its item display model and legacy gun textures and models. The original baked model is preserved as `pulse_rifle_legacy.json` alongside the legacy open and flash variants.
-
-The rig was converted from the existing cuboids and atlas. The reload and inspection keyframes and the exposed core are placeholder art. Use Blockbench with the GeckoLib plugin to refine receiver clearance, magazine alignment and seating, the core's geometry and UVs, and the inspection pose in each hand. Valkron ships the runtime exports. Player hand choreography would require a separate player animation rig.
+The curated GeckoLib geometry, clips, atlases, and glow masks ship inside the JAR. To regenerate ammunition art, recipes, and audio, run `python tools/generate_assets.py` with Pillow, NumPy, and soundfile installed. Run `python tools/validate_weapon_assets.py` to check the rig and timing contracts. The [model-authoring guide](docs/weapon-art.md) covers pivots, the Blender-to-GeckoLib workflow, and the in-game test matrix.

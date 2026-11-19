@@ -49,8 +49,7 @@ public final class Valkron {
     static {
         for (Weapon weapon : Weapon.values()) {
             KITS.put(weapon, new Kit(
-                    ITEMS.register(weapon.id, () -> weapon == Weapon.PULSE_RIFLE
-                            ? new GeoGunItem(weapon) : new GunItem(weapon)),
+                    ITEMS.register(weapon.id, () -> new GeoGunItem(weapon)),
                     ITEMS.registerSimpleItem(weapon.ammoId),
                     sound(weapon.id + ".fire"),
                     sound(weapon.id + ".reload"),
